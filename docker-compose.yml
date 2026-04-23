@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      # Mount your config file (create config.yaml from config.yaml first).
+      # Mount your config file (copy config.yaml and edit to suit your environment).
       - ./config.yaml:/app/config.yaml:ro
       # Persist the SQLite database and thumbnail cache between restarts.
       - nasha-data:/app/data

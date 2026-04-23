@@ -9,12 +9,15 @@
 package auth
 
 import (
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gofiber/fiber/v2"
 )
 
 // Claims are the custom JWT payload fields.
-// TODO: extend with roles and per-mount permissions.
+// TODO: extend with per-mount permissions.
 type Claims struct {
+	jwt.RegisteredClaims
+
 	UserID uint   `json:"uid"`
 	Role   string `json:"role"`
 }

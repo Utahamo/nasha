@@ -44,9 +44,10 @@ nasha/
 │   │   ├── s3.go        #   S3-compatible (aws-sdk-go-v2)
 │   │   └── sftp.go      #   SFTP (pkg/sftp)
 │   ├── vfs/             # Virtual filesystem – mount-point routing
-│   ├── api/             # Fiber routes & handlers
+│   ├── api/             # Fiber routes & handlers (incl. WebDAV server endpoint)
 │   ├── auth/            # JWT issuance & Fiber middleware
-│   └── cache/           # Thumbnail & directory-listing cache
+│   ├── cache/           # Thumbnail & directory-listing cache
+│   └── db/              # GORM database handle (SQLite metadata store)
 ├── web/                 # React + Vite + TailwindCSS frontend
 ├── config.yaml          # Example configuration
 ├── Dockerfile           # Multi-stage Go + static-asset image
@@ -63,7 +64,7 @@ nasha/
 | SMB | `github.com/hirochachacha/go-smb2` | SMB/CIFS client |
 | SFTP | `github.com/pkg/sftp` + `golang.org/x/crypto/ssh` | SFTP client |
 | S3 | `github.com/aws/aws-sdk-go-v2/service/s3` | S3-compatible stores |
-| WebDAV | `golang.org/x/net/webdav` | WebDAV |
+| WebDAV | `golang.org/x/net/webdav` | WebDAV server endpoint (exposes nasha as WebDAV) |
 | UI | React + Vite + TailwindCSS | Frontend |
 | Router | `react-router-dom` | Client-side routing |
 
@@ -79,7 +80,8 @@ nasha/
 
 ```bash
 # Run the API server (hot-reload with Air recommended)
-go run ./cmd/server
+# CGO_ENABLED=1 is required for the SQLite metadata store.
+CGO_ENABLED=1 go run ./cmd/server
 ```
 
 ### Frontend
@@ -96,8 +98,8 @@ npm run dev        # starts Vite dev server on :5173 with API proxy to :8080
 # Build the React bundle into web/dist/
 cd web && npm run build && cd ..
 
-# Build the Go binary (embeds the web/dist/ directory)
-go build -o nasha ./cmd/server
+# Build the Go binary (CGO required for the SQLite metadata store)
+CGO_ENABLED=1 go build -o nasha ./cmd/server
 ```
 
 ## Docker
