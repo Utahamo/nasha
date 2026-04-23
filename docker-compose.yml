@@ -1,0 +1,19 @@
+services:
+  nasha:
+    build: .
+    container_name: nasha
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount your config file (create config.yaml from config.yaml first).
+      - ./config.yaml:/app/config.yaml:ro
+      # Persist the SQLite database and thumbnail cache between restarts.
+      - nasha-data:/app/data
+      # (Optional) expose a local directory as a storage mount.
+      # - /path/to/your/files:/srv/files:ro
+    environment:
+      NASHA_ADDR: ":8080"
+
+volumes:
+  nasha-data:
