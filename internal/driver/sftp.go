@@ -6,17 +6,24 @@ package driver
 import (
 	"context"
 	"io"
+
+	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 )
 
 // SFTPDriver implements StorageDriver for an SFTP server.
 // TODO: implement all methods.
 type SFTPDriver struct {
-	Host       string
-	Port       int
-	Username   string
-	Password   string
+	Host     string
+	Port     int
+	Username string
+	Password string
 	// PrivateKey is the PEM-encoded private key used for key-based authentication.
 	PrivateKey string
+
+	// conn and client are populated when the connection is established.
+	conn   *ssh.Client
+	client *sftp.Client
 }
 
 func (d *SFTPDriver) List(_ context.Context, _ string) ([]FileInfo, error) {

@@ -6,6 +6,8 @@ package driver
 import (
 	"context"
 	"io"
+
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 // S3Driver implements StorageDriver for an S3-compatible object store.
@@ -18,6 +20,9 @@ type S3Driver struct {
 	SecretAccessKey string
 	// PathStyle forces path-style addressing (required by MinIO and some other S3-compatible stores).
 	PathStyle bool
+
+	// client is the configured AWS S3 client; populated on first use.
+	client *s3.Client
 }
 
 func (d *S3Driver) List(_ context.Context, _ string) ([]FileInfo, error) {

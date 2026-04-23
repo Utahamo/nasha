@@ -6,6 +6,8 @@ package driver
 import (
 	"context"
 	"io"
+
+	"github.com/hirochachacha/go-smb2"
 )
 
 // SMBDriver implements StorageDriver for an SMB/CIFS share.
@@ -16,6 +18,9 @@ type SMBDriver struct {
 	Username string
 	Password string
 	Domain   string
+
+	// session is the authenticated SMB2 session; populated on first use.
+	session *smb2.Session
 }
 
 func (d *SMBDriver) List(_ context.Context, _ string) ([]FileInfo, error) {
