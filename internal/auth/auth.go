@@ -3,11 +3,9 @@ package auth
 import (
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 )
-
-var jwtSecret = []byte("nasha-demo-secret")
 
 type Claims struct {
 	jwt.RegisteredClaims
@@ -15,23 +13,42 @@ type Claims struct {
 	Role   string `json:"role"`
 }
 
-// SignToken creates a signed JWT for the given user.
-func SignToken(userID uint, role string) (string, error) {
+type Config struct {
+	Secret   string
+	TokenTTL time.Duration
+}
+
+type Auth struct {
+	secret   []byte
+	tokenTTL time.Duration
+}
+
+func New(cfg Config) *Auth {
+	secret := cfg.Secret
+	if secret == "" {
+		secret = "nasha-default-secret"
+	}
+	ttl := cfg.TokenTTL
+	if ttl <= 0 {
+		ttl = 24 * time.Hour
+	}
+	return &Auth{secret: []byte(secret), tokenTTL: ttl}
+}
+
+func (a *Auth) SignToken(userID uint, role string) (string, error) {
 	claims := Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(a.tokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 		UserID: userID,
 		Role:   role,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString(a.secret)
 }
 
-// Middleware validates the Bearer token (from header or ?token= query param)
-// and injects claims into context.
-func Middleware() fiber.Handler {
+func (a *Auth) Middleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		tokenStr := c.Get("Authorization")
 		if tokenStr == "" {
@@ -44,7 +61,7 @@ func Middleware() fiber.Handler {
 			tokenStr = tokenStr[7:]
 		}
 		token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
-			return jwtSecret, nil
+			return a.secret, nil
 		})
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid or expired token"})

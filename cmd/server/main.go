@@ -8,6 +8,7 @@ import (
 
 	"github.com/Utahamo/nasha/internal/api"
 	"github.com/Utahamo/nasha/internal/config"
+	"github.com/Utahamo/nasha/internal/db"
 	"github.com/Utahamo/nasha/internal/driver"
 	"github.com/Utahamo/nasha/internal/vfs"
 )
@@ -18,6 +19,19 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
+	// Initialize database
+	database, err := db.Open(cfg.Database.DSN)
+	if err != nil {
+		log.Fatalf("failed to open database: %v", err)
+	}
+	if err := database.AutoMigrate(); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
+	}
+	if err := database.Seed(); err != nil {
+		log.Fatalf("failed to seed database: %v", err)
+	}
+
+	// Initialize VFS with mounts
 	v := vfs.New()
 	for _, mc := range cfg.Mounts {
 		if mc.Type != "local" {
@@ -32,7 +46,7 @@ func main() {
 		log.Printf("mounted %q at %s → %s", mc.Name, mc.Path, mc.Config["root"])
 	}
 
-	app := api.New(v, cfg)
+	app := api.New(v, database, cfg)
 
 	addr := os.Getenv("NASHA_ADDR")
 	if addr == "" {
