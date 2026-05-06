@@ -1,12 +1,22 @@
 # nasha
 
-> A self-hosted, open-source multi-protocol storage aggregation gateway.
-> Aggregate local disks, WebDAV shares, SMB/CIFS (Samba), S3-compatible object
-> stores, and SFTP servers behind a single, beautiful Web UI.
+> 自托管、开源的多协议存储聚合网关。
+> 将本地磁盘、WebDAV、SMB/CIFS（Samba）、S3 兼容对象存储和 SFTP 服务器统一在一个 Web 界面下。
 
 ---
 
-## Architecture overview
+## 项目状态
+
+nasha 目前处于 **Demo 阶段** — 核心架构已搭建完成，LocalDriver 可用，可浏览本地文件。更多功能逐步开发中，详见[路线图](ROADMAP.md)。
+
+目前已完成：
+- LocalDriver 全部 7 个方法 ✅
+- VFS 挂载点路由（最长前缀匹配）✅
+- JWT 登录 (admin/admin123) ✅
+- 文件浏览（列表 + 内容读取）✅
+- Docker 多阶段构建 ✅
+
+## 架构
 
 ```
                  ┌─────────────────────────┐
@@ -23,106 +33,98 @@
                  │   └────────┬────────┘  │
                  │   ┌────────▼────────┐  │
                  │   │ StorageDrivers  │  │  internal/driver/
-                 │   │ local webdav    │  │
-                 │   │ smb   s3  sftp  │  │
+                 │   │ Local  WebDAV   │  │
+                 │   │ SMB    S3  SFTP │  │
                  │   └─────────────────┘  │
                  └─────────────────────────┘
 ```
 
-## Directory structure
+## 目录结构
 
 ```
 nasha/
-├── cmd/
-│   └── server/          # Binary entry point (main.go)
+├── cmd/server/          # 入口 (main.go)
 ├── internal/
-│   ├── driver/          # StorageDriver interface + per-protocol stubs
-│   │   ├── driver.go    #   interface & FileInfo type
-│   │   ├── local.go     #   local filesystem
-│   │   ├── webdav.go    #   WebDAV client
-│   │   ├── smb.go       #   SMB/CIFS (go-smb2)
-│   │   ├── s3.go        #   S3-compatible (aws-sdk-go-v2)
-│   │   └── sftp.go      #   SFTP (pkg/sftp)
-│   ├── vfs/             # Virtual filesystem – mount-point routing
-│   ├── api/             # Fiber routes & handlers (incl. WebDAV server endpoint)
-│   ├── auth/            # JWT issuance & Fiber middleware
-│   ├── cache/           # Thumbnail & directory-listing cache
-│   └── db/              # GORM database handle (SQLite metadata store)
-├── web/                 # React + Vite + TailwindCSS frontend
-├── config.yaml          # Example configuration
-├── Dockerfile           # Multi-stage Go + static-asset image
-└── docker-compose.yml   # One-command local deployment
+│   ├── driver/          # StorageDriver 接口 + 5 种协议实现
+│   ├── vfs/             # 虚拟文件系统 — 挂载点路由
+│   ├── api/             # Fiber 路由和请求处理器
+│   ├── auth/            # JWT 签发和中间件
+│   ├── cache/           # 缓存（开发中）
+│   └── db/              # GORM 数据库层（开发中）
+├── web/                 # React + Vite + TailwindCSS 前端
+├── config.yaml          # 配置文件
+├── Dockerfile           # 多阶段构建
+└── docker-compose.yml   # 一键部署
 ```
 
-## Key dependencies
+## 快速开始
 
-| Layer | Package | Purpose |
-|---|---|---|
-| HTTP server | `github.com/gofiber/fiber/v2` | High-performance HTTP |
-| Auth | `github.com/golang-jwt/jwt/v5` | JWT tokens |
-| ORM | `gorm.io/gorm` + `gorm.io/driver/sqlite` | Metadata storage |
-| SMB | `github.com/hirochachacha/go-smb2` | SMB/CIFS client |
-| SFTP | `github.com/pkg/sftp` + `golang.org/x/crypto/ssh` | SFTP client |
-| S3 | `github.com/aws/aws-sdk-go-v2/service/s3` | S3-compatible stores |
-| WebDAV | `golang.org/x/net/webdav` | WebDAV server endpoint (exposes nasha as WebDAV) |
-| UI | React + Vite + TailwindCSS | Frontend |
-| Router | `react-router-dom` | Client-side routing |
+### 前置要求
 
-## Development
-
-### Prerequisites
-
-- Go 1.25+
+- Go 1.25+（CGO 必须启用，SQLite 需要）
 - Node.js 20+
-- (Optional) Docker & Docker Compose
 
-### Backend
+### 后端
 
 ```bash
-# Run the API server (hot-reload with Air recommended)
-# CGO_ENABLED=1 is required for the SQLite metadata store.
 CGO_ENABLED=1 go run ./cmd/server
 ```
 
-### Frontend
+默认监听 `:8080`，登录凭据 `admin / admin123`。
+
+### 前端（开发模式，带热更新）
 
 ```bash
 cd web
 npm install
-npm run dev        # starts Vite dev server on :5173 with API proxy to :8080
+npm run dev
 ```
 
-### Build
+Vite 开发服务器运行在 `:5173`，自动代理 API 请求到 `:8080`。
+
+### 构建
 
 ```bash
-# Build the React bundle into web/dist/
 cd web && npm run build && cd ..
-
-# Build the Go binary (CGO required for the SQLite metadata store)
 CGO_ENABLED=1 go build -o nasha ./cmd/server
 ```
 
-## Docker
+### Docker
 
 ```bash
-# Build and start everything with Docker Compose
 docker compose up --build
 ```
 
-The service will be available at `http://localhost:8080`.
+## 配置
 
-## Configuration
+参考 [`config.yaml`](config.yaml) 中的示例配置。
 
-See [`config.yaml`](config.yaml) for a fully-commented example.
+默认挂载 `./demo_data` 到根路径 `/`，包含示例文件可直接浏览。
 
-## Development roadmap
+## 技术栈
 
-| Phase | Description |
+| 层 | 组件 |
 |---|---|
-| **1 – MVP** | Local filesystem driver + REST API + basic WebUI (browse, upload, download) |
-| **2** | WebDAV / SFTP drivers + JWT auth + Docker packaging |
-| **3** | S3 / SMB drivers + thumbnail cache + share links + inline preview |
-| **4** | Multi-user RBAC + background task queue (copy/unzip) + mobile layout |
+| HTTP 服务 | `gofiber/fiber/v2` |
+| 鉴权 | `golang-jwt/jwt/v5` |
+| ORM | `gorm.io/gorm` + `gorm.io/driver/sqlite` |
+| S3 | `aws/aws-sdk-go-v2/service/s3` |
+| SFTP | `pkg/sftp` + `golang.org/x/crypto/ssh` |
+| SMB | `hirochachacha/go-smb2` |
+| 前端 | React 19 + Vite + TailwindCSS 4 |
+| 路由 | `react-router-dom` v7 |
+
+## 路线图
+
+| 阶段 | 目标 |
+|---|---|
+| **Phase 1** | 增删改查 API + 前端操作 + 用户系统 + bcrypt 密码 |
+| **Phase 2** | S3/SFTP/SMB/WebDAV 驱动实现 |
+| **Phase 3** | 文件预览、搜索、分享链接、设置页 |
+| **Phase 4** | 测试、RBAC、速率限制、CI/CD |
+| **Phase 5** | WebDAV 服务端、TUS 分块上传、i18n、2FA、移动端 |
+
+详见 [ROADMAP.md](ROADMAP.md)。
 
 ## License
 
