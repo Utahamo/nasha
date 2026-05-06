@@ -1,76 +1,20 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# nasha – sample configuration
-# Copy this file to config.yaml and adjust to your environment.
-# ──────────────────────────────────────────────────────────────────────────────
-
 server:
-  # Address the HTTP server listens on.  Override with $NASHA_ADDR.
   addr: ":8080"
-  # Path to the pre-built React bundle (relative to the binary).
   static_dir: "./web/dist"
 
 auth:
-  # Secret used to sign JWT tokens.  Must be changed in production!
-  jwt_secret: "change-me-in-production"
-  # Access token lifetime (e.g. 15m, 1h).
-  token_ttl: "1h"
+  jwt_secret: "nasha-demo-secret"
+  token_ttl: "24h"
 
 database:
-  # SQLite database file path.  Use an absolute path in production.
   dsn: "./nasha.db"
 
 cache:
-  # Directory where thumbnails and other cached data are stored.
   dir: "./cache"
 
 mounts:
-  # ── Example: local filesystem ──────────────────────────────────────────────
-  - name: "Local"
+  - name: "Demo"
     type: local
-    path: /local
+    path: /
     config:
-      root: "/srv/files"
-
-  # ── Example: SMB/CIFS share ────────────────────────────────────────────────
-  # - name: "My NAS"
-  #   type: smb
-  #   path: /nas
-  #   config:
-  #     host: 192.168.1.100
-  #     share: media
-  #     username: admin
-  #     password: secret
-  #     domain: WORKGROUP
-
-  # ── Example: S3-compatible object store ────────────────────────────────────
-  # - name: "Cloud"
-  #   type: s3
-  #   path: /cloud
-  #   config:
-  #     endpoint: https://s3.amazonaws.com
-  #     bucket: my-bucket
-  #     region: us-east-1
-  #     access_key_id: AKIAIOSFODNN7EXAMPLE
-  #     secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-  #     path_style: false
-
-  # ── Example: SFTP server ───────────────────────────────────────────────────
-  # - name: "Remote SFTP"
-  #   type: sftp
-  #   path: /sftp
-  #   config:
-  #     host: sftp.example.com
-  #     port: 22
-  #     username: user
-  #     password: secret
-  #     # Or use a private key (PEM format, path relative to the binary):
-  #     # private_key_file: ./id_rsa
-
-  # ── Example: WebDAV remote ─────────────────────────────────────────────────
-  # - name: "Nextcloud"
-  #   type: webdav
-  #   path: /nextcloud
-  #   config:
-  #     endpoint: https://cloud.example.com/remote.php/dav/files/user/
-  #     username: user
-  #     password: secret
+      root: "./demo_data"
