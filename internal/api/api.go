@@ -2,6 +2,7 @@ package api
 
 import (
 	"io"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -34,7 +35,10 @@ func New(v *vfs.VFS, database *db.DB, cfg *config.Config) *fiber.App {
 		}),
 	}
 
-	app := fiber.New(fiber.Config{AppName: "nasha"})
+	app := fiber.New(fiber.Config{
+		AppName:   "nasha",
+		BodyLimit: 100 * 1024 * 1024, // 100 MB max upload
+	})
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -150,7 +154,7 @@ func (a *API) handlePost(c *fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{"error": "failed to read file: " + h.Filename})
 			}
-			dst := filepath.Join(p, h.Filename)
+			dst := path.Join(p, h.Filename)
 			if err := a.v.Write(c.Context(), dst, f); err != nil {
 				f.Close()
 				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
